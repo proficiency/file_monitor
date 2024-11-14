@@ -32,7 +32,7 @@ impl Cache {
             .filter(|x| x.path() != dir);
 
         for entry in iter {
-            let path = get_relative_path(PathBuf::from(entry.path()))?;
+            let path = get_relative_path(entry.path().into())?;
             if !cache.contains_key(&path) {
                 cache.insert(path.clone(), get_date_modified(&path)?);
             }
@@ -74,12 +74,8 @@ impl Cache {
                             _ => {}
                         }
                     }
-
-                    ModifyKind::Data(_) | ModifyKind::Metadata(_) | ModifyKind::Other => {
-                        self.cache.insert(path, Local::now());
-                    }
-
-                    _ => {}
+                    
+                    _ => {self.cache.insert(path, Local::now());}
                 }
 
                 "MOD"

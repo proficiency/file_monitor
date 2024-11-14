@@ -1,4 +1,4 @@
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 use std::path::{Path, PathBuf};
 
 use chrono::{
@@ -7,13 +7,7 @@ use chrono::{
 };
 
 pub(crate) fn get_date_modified(path: &Path) -> Result<DateTime<Local>, Error> {
-    if let Ok(metadata) = std::fs::metadata(path) {
-        if let Ok(modified) = metadata.modified() {
-           return Ok(modified.into())
-        }
-    }
-
-    Err(Error::new(ErrorKind::InvalidInput, format!("failed to get \"Date Modified\" for {}. the file likely does not exist", path.display())))
+    Ok(std::fs::metadata(path)?.modified()?.into())
 }
 
 pub(crate) fn get_relative_path(mut abs_path: PathBuf) -> Result<PathBuf, Error> {
