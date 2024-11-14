@@ -1,4 +1,5 @@
 use std::path::*;
+use tokio::io::AsyncWriteExt;
 
 pub(crate) async fn run_tests() {
     let dir = PathBuf::from("inbox");
@@ -27,7 +28,7 @@ pub(crate) async fn run_tests() {
             break;
         }
 
-        async_remove_file(&file).await;
+        async_remove_file(file).await;
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
 }
@@ -43,7 +44,7 @@ async fn async_modify_file(file_path: &Path) {
         .await
         .expect("failed to modify file");
 
-    tokio::io::AsyncWriteExt::write_all(&mut file, b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+    file.write_all(b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
         .await
         .expect("failed to write to file");
 }

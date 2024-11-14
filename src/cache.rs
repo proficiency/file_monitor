@@ -27,14 +27,14 @@ pub struct Cache {
 impl Cache {
     pub fn new(dir: &PathBuf) -> Result<Self, Error> {
         let mut cache: HashMap<PathBuf, DateTime<Local>> = HashMap::new();
-        for entry in WalkDir::new(dir).into_iter().filter_map(Result::ok) {
-            if entry.path() == dir {
-                continue;
-            }
+        let iter = WalkDir::new(dir).into_iter()
+            .filter_map(Result::ok)
+            .filter(|x| x.path() != dir);
 
-            let path = &get_relative_path(&PathBuf::from(entry.path()))?;
-            if !cache.contains_key(path) {
-                cache.insert(path.clone(), get_date_modified(path)?);
+        for entry in iter {
+            let path = get_relative_path(PathBuf::from(entry.path()))?;
+            if !cache.contains_key(&path) {
+                cache.insert(path.clone(), get_date_modified(&path)?);
             }
         }
 
@@ -44,16 +44,18 @@ impl Cache {
     }
 
     pub fn handle_event(&mut self, event: Event) -> notify::Result<()> {
-        let path = &get_relative_path(event.paths.first().expect("no path associated with the operation."))?;
-
+        let path = get_relative_path(event.paths.first().expect("no path associated with the operation.").to_path_buf())?;
+        let path_str = format!("{}", path.display());
+        
         let operation_type = match &event.kind {
             EventKind::Create(_) => {
-                self.cache.insert(path.clone(), get_date_modified(path)?);
+                let date_modified = get_date_modified(&path)?;
+                self.cache.insert(path, date_modified);
                 "NEW"
             }
 
             EventKind::Remove(_) => {
-                self.cache.remove(path);
+                self.cache.remove(&path);
                 "DEL"
             }
 
@@ -62,11 +64,11 @@ impl Cache {
                     ModifyKind::Name(rename_mode) => {
                         match rename_mode {
                             RenameMode::To => {
-                                self.cache.insert(path.clone(), Local::now());
+                                self.cache.insert(path, Local::now());
                             }
 
                             RenameMode::From => {
-                                self.cache.remove(path);
+                                self.cache.remove(&path);
                             }
 
                             _ => {}
@@ -74,7 +76,7 @@ impl Cache {
                     }
 
                     ModifyKind::Data(_) | ModifyKind::Metadata(_) | ModifyKind::Other => {
-                        self.cache.insert(path.clone(), Local::now());
+                        self.cache.insert(path, Local::now());
                     }
 
                     _ => {}
@@ -87,7 +89,7 @@ impl Cache {
         };
 
         if !operation_type.is_empty() {
-            println!("[{}] {}", operation_type, path.display());
+            println!("[{}] {}", operation_type, path_str);
         }
 
         Ok(())

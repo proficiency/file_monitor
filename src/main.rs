@@ -36,7 +36,7 @@ async fn main() -> notify::Result<()> {
 
     println!("spawning monitor for \"{}\"...", path.display());
 
-    let mut monitor = Monitor::new(PathBuf::from(path))?;
+    let mut monitor = Monitor::new(path)?;
     monitor.print_cache();
 
     if args.test {

@@ -11,14 +11,9 @@ use notify::{
     Watcher,
 };
 
-use futures::{
-    channel::mpsc::{
-        channel,
-        Receiver
-    },
-
-    SinkExt,
-    StreamExt,
+use tokio::sync::mpsc::{
+    channel,
+    Receiver
 };
 
 pub struct Monitor {
@@ -30,29 +25,25 @@ pub struct Monitor {
 
 impl Monitor {
     pub fn new(directory: PathBuf) -> notify::Result<Self> {
-        let (mut tx, rx) = channel(1);
+        let (tx, rx) = channel(1);
 
         let watcher = RecommendedWatcher::new(move |res| {
-            futures::executor::block_on(async {
-                tx.send(res).await.unwrap();
-            })
-        },
-                                              Config::default(),
-        )?;
+            tx.blocking_send(res).unwrap();
+        }, Config::default())?;
 
 
         Ok(Self {
-            directory: directory.clone(),
             cache: Cache::new(&directory)?,
+            directory,        
             watcher,
             rx,
         })
     }
 
     pub async fn async_monitor(&mut self) -> notify::Result<()> {
-        self.watcher.watch(self.directory.as_ref(), RecursiveMode::Recursive)?;
+        self.watcher.watch(&self.directory, RecursiveMode::Recursive)?;
 
-        while let Some(res) = self.rx.next().await {
+        while let Some(res) = self.rx.recv().await {
             match res {
                 Ok(event) => self.cache.handle_event(event)?,
                 Err(e) => eprintln!("failed to receive event {:?}", e),
