@@ -9,4 +9,4 @@ Getting file_monitor up and running is very simple:
 * cd into `file_monitor`
 * run `cargo run -- [options]`
 
-_file_monitor also comes with a testsuite that can be accessed by running `cargo test -- --nocapture_
+_file_monitor also comes with a testsuite that can be accessed by running `cargo test -- --nocapture`_
