@@ -1,0 +1,9 @@
+target/
+debug/
+inbox/
+.idea/
+.obsidian/
+
+Cargo.lock
+
+**/*.rs.bk
