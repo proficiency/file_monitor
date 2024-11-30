@@ -1,7 +1,6 @@
 mod monitor;
 mod internal;
 mod cache;
-mod tests;
 
 use crate::monitor::*;
 
